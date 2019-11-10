@@ -1,0 +1,642 @@
+
+<script>var __pbpa = true;</script>
+<meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+<title>Custom Character Sorter</title>
+<noscript></noscript><!-- -->
+<link href="https://web.archive.org/web/20190424064048cs_/https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" type="text/css">
+<link rel="shortcut icon" href="/web/20190424064048im_/https://tursake.github.io/Custom-Character-Sorter/Images/icon.png">
+<script src="https://web.archive.org/web/20190424064048js_/https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript">
+
+<!--
+//*********************************************************
+ 
+//*********************************************************
+var jsonData;
+var namMember = new Array();
+
+function menuToggle()
+{
+    $(document.getElementById("menuArea")).animate({
+            height: 'toggle'
+        });
+}
+
+function checkRadio()
+{
+    if(document.getElementById('1').checked)
+    {
+        getGallery();
+    }
+    else if(document.getElementById('2').checked)
+    {
+        getGallery2();
+    }
+    else
+    {
+        alert("No option selected!")
+    }
+}
+    
+function getGallery(){
+    
+var urlGet = document.getElementById('imgururl').value; 
+    
+    if(urlGet.match(/^[a-z0-9]+$/i) != null)
+    {
+        $.ajax({
+            async:false,
+            type: "GET",
+            url: "https://web.archive.org/web/20190424064048/https://api.imgur.com/3/album/" + urlGet + "/images",
+            dataType: "json",
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('Authorization', 'Client-ID fcc6a9e4fcd6fed');
+            },
+            success: function(data) {
+                
+                document.getElementById("startButton").disabled = true;
+                document.getElementById("imgururl").disabled = true;
+                document.getElementById("presetList").disabled = true;
+                document.getElementById("titleCheck").disabled = true;
+                document.getElementById("1").disabled = true;
+                document.getElementById("2").disabled = true;
+                
+                jsonData = data.data;
+
+                if(document.getElementById("titleCheck").checked)
+                {
+                    for (var x = 0; x < jsonData.length; x++)
+                    {
+                        namMember[x] = namMember[x] = "<div style=\"position:absolute;width:100%;vertical-align:top;top:2px\">" + jsonData[x].title + "<hr></div>" + "<img style=\"max-width:250px;max-height:375px;\" src=" + jsonData[x].link + ">";
+                    }
+                }
+                else
+                {
+                    for (var x = 0; x < jsonData.length; x++)
+                    {
+                        namMember[x] = "<img style=\"max-width:250px;max-height:375px;\" src=" + jsonData[x].link + ">";
+                    }
+                }
+
+                menuToggle();
+                initList();
+                showImage();
+            },
+            error: function(){
+                document.getElementById("imgururl").value = "";
+                alert("Not a valid imgur gallery, please try again.");
+            }
+        });
+    }
+    else
+    {
+        document.getElementById("imgururl").value = "";
+        window.alert("Not a valid imgur gallery, please try again.");
+    }
+
+}
+
+function getGallery2(){
+    
+document.getElementById("startButton").disabled = true;
+var urlGet = document.getElementById('presetList').value;
+document.getElementById("imgururl").disabled = true;
+document.getElementById("presetList").disabled = true;
+document.getElementById("titleCheck").disabled = true;
+document.getElementById("1").disabled = true;
+document.getElementById("2").disabled = true;
+
+
+$.ajax({
+    async:false,
+    type: "GET",
+    url: "https://web.archive.org/web/20190424064048/https://api.imgur.com/3/album/" + urlGet + "/images",
+    dataType: "json",
+    beforeSend: function(xhr) {
+        xhr.setRequestHeader('Authorization', 'Client-ID fcc6a9e4fcd6fed');
+    },
+    success: function(data) {
+        jsonData = data.data;
+        
+        if(document.getElementById("titleCheck").checked)
+        {
+            for (var x = 0; x < jsonData.length; x++)
+            {
+                namMember[x] = "<div style=\"position:absolute;width:100%;vertical-align:top;top:2px\">" + jsonData[x].title + "<hr></div>" + "<img style=\"max-width:250px;max-height:375px;\" src=" + jsonData[x].link + ">";
+            }
+        }
+        else
+        {
+            for (var x = 0; x < jsonData.length; x++)
+            {
+                namMember[x] = "<img style=\"max-width:250px;max-height:375px;\" src=" + jsonData[x].link + ">";
+            }
+        }
+        
+        menuToggle();
+        initList();
+        showImage();
+    }
+});
+}
+//*********************************************************
+ 
+var lstMember = new Array();
+var parent = new Array();
+var equal = new Array();
+var rec = new Array();
+var cmp1,cmp2;
+var head1,head2;
+var nrec;
+ 
+var numQuestion;
+var totalSize;
+var finishSize;
+var finishFlag;
+ 
+//The initialization of the variable+++++++++++++++++++++++++++++++++++++++++++++
+function initList(){
+    var n = 0;
+    var mid;
+        var i;
+ 
+        //The sequence that you should sort
+        lstMember[n] = new Array();
+        for (i=0; i<namMember.length; i++) {
+                lstMember[n][i] = i;
+        }
+        parent[n] = -1;
+        totalSize = 0;
+        n++;
+ 
+        for (i=0; i<lstMember.length; i++) {
+                //And element divides it in two/more than two
+                //Increase divided sequence of last in first member
+                if(lstMember[i].length>=2) {
+                        mid = Math.ceil(lstMember[i].length/2);
+                        lstMember[n] = new Array();
+                        lstMember[n] = lstMember[i].slice(0,mid);
+                        totalSize += lstMember[n].length;
+                        parent[n] = i;
+                        n++;
+                        lstMember[n] = new Array();
+                        lstMember[n] = lstMember[i].slice(mid,lstMember[i].length);
+                        totalSize += lstMember[n].length;
+                        parent[n] = i;
+                        n++;
+                }
+        }
+ 
+        //Preserve this sequence
+        for (i=0; i<namMember.length; i++) {
+                rec[i] = 0;
+        }
+        nrec = 0;
+ 
+        //List that keeps your results
+        //Value of link initial
+        // Value of link initial
+        for (i=0; i<=namMember.length; i++) {
+                equal[i] = -1;
+        }
+ 
+        cmp1 = lstMember.length-2;
+        cmp2 = lstMember.length-1;
+        head1 = 0;
+        head2 = 0;
+        numQuestion = 1;
+        finishSize = 0;
+        finishFlag = 0;
+}
+ 
+//&#12522;&#12473;&#12488;&#12398;&#12477;&#12540;&#12488;+++++++++++++++++++++++++++++++++++++++++++
+//flag&#65306;Don't know characters
+//  -1&#65306;Chose the left
+//   0&#65306;Tie
+//   1&#65306;Chose the right
+function sortList(flag){
+        var i;
+        var str;
+ 
+        //rec preservation
+        if (flag<0) {
+                rec[nrec] = lstMember[cmp1][head1];
+                head1++;
+                nrec++;
+                finishSize++;
+                while (equal[rec[nrec-1]]!=-1) {
+                        rec[nrec] = lstMember[cmp1][head1];
+                        head1++;
+                        nrec++;
+                        finishSize++;
+                }
+        }
+        else if (flag>0) {
+                rec[nrec] = lstMember[cmp2][head2];
+                head2++;
+                nrec++;
+                finishSize++;
+                while (equal[rec[nrec-1]]!=-1) {
+                        rec[nrec] = lstMember[cmp2][head2];
+                        head2++;
+                        nrec++;
+                        finishSize++;
+                }
+        }
+        else {
+                rec[nrec] = lstMember[cmp1][head1];
+                head1++;
+                nrec++;
+                finishSize++;
+                while (equal[rec[nrec-1]]!=-1) {
+                        rec[nrec] = lstMember[cmp1][head1];
+                        head1++;
+                        nrec++;
+                        finishSize++;
+                }
+                equal[rec[nrec-1]] = lstMember[cmp2][head2];
+                rec[nrec] = lstMember[cmp2][head2];
+                head2++;
+                nrec++;
+                finishSize++;
+                while (equal[rec[nrec-1]]!=-1) {
+                        rec[nrec] = lstMember[cmp2][head2];
+                        head2++;
+                        nrec++;
+                        finishSize++;
+                }
+        }
+ 
+        //Processing after finishing with one list
+        if (head1<lstMember[cmp1].length && head2==lstMember[cmp2].length) {
+                //List the remainder of cmp2 copies, list cmp1 copies when finished scanning
+                while (head1<lstMember[cmp1].length){
+                        rec[nrec] = lstMember[cmp1][head1];
+                        head1++;
+                        nrec++;
+                        finishSize++;
+                }
+        }
+        else if (head1==lstMember[cmp1].length && head2<lstMember[cmp2].length) {
+                //List the remainder of cmp1 copies, list cmp2 copies when finished scanning
+                while (head2<lstMember[cmp2].length){
+                        rec[nrec] = lstMember[cmp2][head2];
+                        head2++;
+                        nrec++;
+                        finishSize++;
+                }
+        }
+ 
+        //When it arrives at the end of both lists
+        //Update a pro list
+        if (head1==lstMember[cmp1].length && head2==lstMember[cmp2].length) {
+                for (i=0; i<lstMember[cmp1].length+lstMember[cmp2].length; i++) {
+                        lstMember[parent[cmp1]][i] = rec[i];
+                }
+                lstMember.pop();
+                lstMember.pop();
+                cmp1 = cmp1-2;
+                cmp2 = cmp2-2;
+                head1 = 0;
+                head2 = 0;
+ 
+                //Initialize the rec before performing the new comparison
+                if (head1==0 && head2==0) {
+                        for (i=0; i<namMember.length; i++) {
+                                rec[i] = 0;
+                        }
+                        nrec = 0;
+                }
+        }
+ 
+        if (cmp1<0) {
+                str = "Battle No."+(numQuestion-1)+"<br>"+Math.floor(finishSize*100/totalSize)+"% sorted.";
+                document.getElementById("battleNumber").innerHTML = str;
+ 
+                showResult();
+                finishFlag = 1;
+        }
+        else {
+                showImage();
+        }
+}
+ 
+//The results+++++++++++++++++++++++++++++++++++++++++++++++
+//&#38918;&#20301;=Rank/Grade/Position/Standing/Status
+//&#21517;&#21069;=Identification term
+function showResult() {
+        var ranking = 1;
+        var sameRank = 1;
+        var str = "";
+        var i;
+ 
+        str += "<table style=\"width:200px; font-size:12px; line-height:120%; margin-left:auto; margin-right:auto; border:1px solid #000; border-collapse:collapse\" align=\"center\">";
+        str += "<tr><td style=\"color:#ffffff; background-color:#000; text-align:center;\">Rank<\/td><td style=\"color:#ffffff; background-color:#000; text-align:center;\">Character<\/td><\/tr>";
+ 
+        for (i=0; i<namMember.length; i++) {
+                str += "<tr><td style=\"border:1px solid #000; text-align:right; padding-right:5px;\">"+ranking+"<\/td><td style=\"border:1px solid #000; padding-left:5px;\">"+namMember[lstMember[0][i]]+"<\/td><\/tr>";
+                if (i<namMember.length-1) {
+                        if (equal[lstMember[0][i]]==lstMember[0][i+1]) {
+                                sameRank++;
+                        } else {
+                                ranking += sameRank;
+                                sameRank = 1;
+                        }
+                }
+        }
+        str += "<\/table>";
+ 
+        document.getElementById("resultField").innerHTML = str;
+}
+ 
+//Indicates two elements to compare+++++++++++++++++++++++++++++++++++
+function showImage() {
+        var str0 = "Battle No."+numQuestion+"<br>"+Math.floor(finishSize*100/totalSize)+"% sorted.";
+        var str1 = ""+toNameFace(lstMember[cmp1][head1]);
+        var str2 = ""+toNameFace(lstMember[cmp2][head2]);
+ 
+        document.getElementById("battleNumber").innerHTML = str0;
+        document.getElementById("leftField").innerHTML = str1;
+        document.getElementById("rightField").innerHTML = str2;
+ 
+        numQuestion++;
+}
+ 
+//Convert numeric value into a name (emoticon)+++++++++++++++++++++++++++++++
+function toNameFace(n){
+        var str = namMember[n];
+ 
+        //Exclude the following comment when adding an emoticon
+        //Warning not to contradict an indext of namMember
+        /*
+        str += "<br>&#9472;&#9472;&#9472;&#9472;<br>";
+        switch(n) {
+                //case -1 Because it is a sample, delete it
+                case -1: str+="&#65288; ?&#8704;&#65344;&#65289;";break;
+                default: str+=""+n;
+        }
+        */
+        return str;
+}
+//-->
+</script>
+<style type="text/css">
+<!--
+/**********************************************************
+ 
+ When changing the style of the list, please edit here.
+ 
+**********************************************************/
+html *
+{
+    font-family: 'Lato',sans-serif;
+    color: #444444;
+}
+
+#mainTable{
+        font-size: 16px;
+        text-align: center;
+        vertical-align: middle;
+        margin-left: auto;
+        margin-right: auto;
+        border-collapse: separate;
+        border-spacing: 5px 5px;
+        width: 660px;
+        height: 375px;
+}
+#leftField{
+        border: 1px solid #000;
+        width: 250px;
+        height: 375px;
+        position:relative;
+        text-align:center;
+        vertical-align:central;
+}
+#rightField{
+        border: 1px solid #000;
+        width: 250px;
+        height: 375px;
+        position:relative;
+        text-align:center;
+        vertical-align:central;
+}
+.middleField{
+        width: 120px;
+        height: 70px;
+        border: 1px solid #000;
+}
+input[type="submit"].plain {
+    border: 0;
+    background-color: #ffffff;
+    border: 1px solid #000;
+}
+input:disabled[type="submit"].plain {
+    border: 0;
+    background-color: #ebebe4;
+    border: 1px solid #000;
+}
+select:disabled.plain{
+    background-color: #ebebe4;
+}
+#menuArea{
+   background-color: #f1f1f1;
+   width: 410px; 
+   padding: 10px;
+   font-size: 12px;
+   margin-top: 5px;
+   margin-bottom: 10px;
+}
+//-->
+<!--
+A{
+  text-decoration : none;
+}
+-->
+</style>
+</head>
+
+<body bgcolor="#ffffff" link="#000000" vlink="#000000" alink="#8b6b46"><!-- BEGIN WAYBACK TOOLBAR INSERT -->
+<script type="text/javascript" src="/_static/js/timestamp.js" charset="utf-8"></script>
+<script type="text/javascript" src="/_static/js/graph-calc.js" charset="utf-8"></script>
+<script type="text/javascript" src="/_static/js/auto-complete.js" charset="utf-8"></script>
+<script type="text/javascript" src="/_static/js/toolbar.js" charset="utf-8"></script>
+<style type="text/css">
+body {
+  margin-top:0 !important;
+  padding-top:0 !important;
+  /*min-width:800px !important;*/
+}
+.wb-autocomplete-suggestions {
+    text-align: left; cursor: default; border: 1px solid #ccc; border-top: 0; background: #fff; box-shadow: -1px 1px 3px rgba(0,0,0,.1);
+    position: absolute; display: none; z-index: 2147483647; max-height: 254px; overflow: hidden; overflow-y: auto; box-sizing: border-box;
+}
+.wb-autocomplete-suggestion { position: relative; padding: 0 .6em; line-height: 23px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.02em; color: #333; }
+.wb-autocomplete-suggestion b { font-weight: bold; }
+.wb-autocomplete-suggestion.selected { background: #f0f0f0; }
+</style>
+<div id="wm-ipp-base" lang="en" style="display:none;direction:ltr;">
+<div id="wm-ipp" style="position:fixed;left:0;top:0;right:0;">
+<div id="wm-ipp-inside">
+  <div style="position:relative;">
+    <div id="wm-logo" style="float:left;width:130px;padding-top:10px;">
+      <a href="/web/" title="Wayback Machine home page"><img src="/_static/images/toolbar/wayback-toolbar-logo.png" alt="Wayback Machine" width="110" height="39" border="0" /></a>
+    </div>
+    <div class="r" style="float:right;">
+      <div id="wm-btns" style="text-align:right;height:25px;">
+                  <div id="wm-save-snapshot-success">success</div>
+          <div id="wm-save-snapshot-fail">fail</div>
+          <a href="#"
+             onclick="__wm.saveSnapshot('https://tursake.github.io/Custom-Character-Sorter/', '20190424064048')"
+             title="Share via My Web Archive"
+             id="wm-save-snapshot-open"
+          >
+            <span class="iconochive-web"></span>
+          </a>
+          <a href="https://archive.org/account/login.php"
+             title="Sign In"
+             id="wm-sign-in"
+          >
+            <span class="iconochive-person"></span>
+          </a>
+          <span id="wm-save-snapshot-in-progress" class="iconochive-web"></span>
+        	<a href="http://faq.web.archive.org/" title="Get some help using the Wayback Machine" style="top:-6px;"><span class="iconochive-question" style="color:rgb(87,186,244);font-size:160%;"></span></a>
+	<a id="wm-tb-close" href="#close" onclick="__wm.h(event);return false;" style="top:-2px;" title="Close the toolbar"><span class="iconochive-remove-circle" style="color:#888888;font-size:240%;"></span></a>
+      </div>
+      <div id="wm-share" style="text-align:right;">
+	<a href="#" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=https://web.archive.org/web/20190424064048/https://tursake.github.io/Custom-Character-Sorter/', '', 'height=400,width=600'); return false;" title="Share on Facebook" style="margin-right:5px;" target="_blank"><span class="iconochive-facebook" style="color:#3b5998;font-size:160%;"></span></a>
+	<a href="#" onclick="window.open('https://twitter.com/intent/tweet?text=https://web.archive.org/web/20190424064048/https://tursake.github.io/Custom-Character-Sorter/&amp;via=internetarchive', '', 'height=400,width=600'); return false;" title="Share on Twitter" style="margin-right:5px;" target="_blank"><span class="iconochive-twitter" style="color:#1dcaff;font-size:160%;"></span></a>
+      </div>
+    </div>
+    <table class="c" style="">
+      <tbody>
+	<tr>
+	  <td class="u" colspan="2">
+	    <form target="_top" method="get" action="/web/submit" name="wmtb" id="wmtb"><input type="text" name="url" id="wmtbURL" value="https://tursake.github.io/Custom-Character-Sorter/" onfocus="this.focus();this.select();" /><input type="hidden" name="type" value="replay" /><input type="hidden" name="date" value="20190424064048" /><input type="submit" value="Go" /></form>
+	  </td>
+	  <td class="n" rowspan="2" style="width:110px;">
+	    <table>
+	      <tbody>
+		<!-- NEXT/PREV MONTH NAV AND MONTH INDICATOR -->
+		<tr class="m">
+		  <td class="b" nowrap="nowrap">Mar</td>
+		  <td class="c" id="displayMonthEl" title="You are here: 06:40:48 Apr 24, 2019">APR</td>
+		  <td class="f" nowrap="nowrap">May</td>
+		</tr>
+		<!-- NEXT/PREV CAPTURE NAV AND DAY OF MONTH INDICATOR -->
+		<tr class="d">
+		  <td class="b" nowrap="nowrap"><img src="/_static/images/toolbar/wm_tb_prv_off.png" alt="Previous capture" width="14" height="16" border="0" /></td>
+		  <td class="c" id="displayDayEl" style="width:34px;font-size:24px;white-space:nowrap;" title="You are here: 06:40:48 Apr 24, 2019">24</td>
+		  <td class="f" nowrap="nowrap"><img src="/_static/images/toolbar/wm_tb_nxt_off.png" alt="Next capture" width="14" height="16" border="0" /></td>
+		</tr>
+		<!-- NEXT/PREV YEAR NAV AND YEAR INDICATOR -->
+		<tr class="y">
+		  <td class="b" nowrap="nowrap">2018</td>
+		  <td class="c" id="displayYearEl" title="You are here: 06:40:48 Apr 24, 2019">2019</td>
+		  <td class="f" nowrap="nowrap">2020</td>
+		</tr>
+	      </tbody>
+	    </table>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="s">
+	    	    <div id="wm-nav-captures">
+	      	      <a class="t" href="/web/20190424064048*/https://tursake.github.io/Custom-Character-Sorter/" title="See a list of every capture for this URL">1 capture</a>
+	      <div class="r" title="Timespan for captures of this URL">24 Apr 2019</div>
+	      </div>
+	  </td>
+	  <td class="k">
+	    <a href="" id="wm-graph-anchor">
+	      <div id="wm-ipp-sparkline" title="Explore captures for this URL" style="position: relative">
+		<canvas id="wm-sparkline-canvas" width="600" height="27" border="0"></canvas>
+	      </div>
+	    </a>
+	  </td>
+	</tr>
+      </tbody>
+    </table>
+    <div style="position:absolute;bottom:0;right:2px;text-align:right;">
+      <a id="wm-expand" class="wm-btn wm-closed" href="#expand" onclick="__wm.ex(event);return false;"><span id="wm-expand-icon" class="iconochive-down-solid"></span> <span style="font-size:80%">About this capture</span></a>
+    </div>
+  </div>
+    <div id="wm-capinfo" style="border-top:1px solid #777;display:none; overflow: hidden">
+            <div style="background-color:#666;color:#fff;font-weight:bold;text-align:center">COLLECTED BY</div>
+    <div style="padding:3px;position:relative" id="wm-collected-by-content">
+      <div style="display:inline-block;vertical-align:top;width:49%;">
+			<span class="c-logo" style="background-image:url(https://archive.org/services/img/twitteroutlinks)"></span>
+		<div>Collection: <a style="color:#33f;" href="https://archive.org/details/twitteroutlinks" target="_new"><span class="wm-title">Twitter Outlinks</span></a></div>
+	      </div>
+    </div>
+    <div style="background-color:#666;color:#fff;font-weight:bold;text-align:center" title="Timestamps for the elements of this page">TIMESTAMPS</div>
+    <div>
+      <div id="wm-capresources" style="margin:0 5px 5px 5px;max-height:250px;overflow-y:scroll !important"></div>
+      <div id="wm-capresources-loading" style="text-align:left;margin:0 20px 5px 5px;display:none"><img src="/_static/images/loading.gif" alt="loading" /></div>
+    </div>
+  </div></div></div></div><script type="text/javascript">
+__wm.bt(600,27,25,2,"web","https://tursake.github.io/Custom-Character-Sorter/","2019-04-24",1996,"/_static/",['css/banner-styles.css','css/iconochive.css']);
+</script>
+<!-- END WAYBACK TOOLBAR INSERT -->
+
+    
+    <table align="center">
+        <td style="padding-top: 60px;"><img src="/web/20190424064048im_/https://tursake.github.io/Custom-Character-Sorter/Images/title.png"></td>
+    </table>    
+    
+    <table align="center">
+    <td id="battleNumber" colspan="3" style="padding-top: 30px;text-align:center;">Battle No.1<br>0% sorted.</td>
+    </table>
+    
+<table id="mainTable" align="center">
+    <tbody>
+        <tr>
+            <td id="leftField" onclick="if(finishFlag==0)sortList(-1);" rowspan="2"><img src="/web/20190424064048im_/https://tursake.github.io/Custom-Character-Sorter/Images/kirino2.png" style="display:block"></td>
+            <td class="middleField" onclick="if(finishFlag==0)sortList(0);" style="text-align:center;">
+                I Like Both
+            </td>
+            <td id="rightField" onclick="if(finishFlag==0)sortList(1);" rowspan="2"><img src="/web/20190424064048im_/https://tursake.github.io/Custom-Character-Sorter/Images/kuroneko2.png" style="display:block"></td>
+        </tr>
+        <tr>
+            <td class="middleField" onclick="if(finishFlag==0)sortList(0);" style="text-align:center;">
+                No Opinion
+            </td>
+ 
+        </tr>
+    </tbody></table>
+        
+        
+    
+<center>
+    <input type="submit" id="activateMenu" class="plain" onclick="menuToggle();" value="Menu" style="margin-bottom: 5px;margin-top: 5px"/>
+    
+    <div id="menuArea">
+        <font size="3">1) Choose</font><br>
+        <input type="radio" name="selectType" id="1" class="plain" checked="checked"><b>Imgur Gallery URL:</b><br>
+        <input type="text" id="imgururl" style="margin-top: 10px;">
+    <p>
+        Paste ID of imgur callery containing images you want to sort.<br>
+        (Note: Image titles will be displayed in the sorter)
+    </p>
+    <input type="radio" name="selectType" id="2" class="plain"><b>Preset lists:</b><br>
+        <select id="presetList" style="margin-top: 10px;" class="plain">
+            <option value="G7IGm">Senran Kagura</option>
+        </select>
+        <br>
+        <hr style="margin: 10px">
+        <font size="3">2) Go</font><br>
+        <input type="checkbox" id="titleCheck"/><font size="2"> Display image titles?</font>
+        <br><br>
+        <input type="submit" id="startButton" class="plain" value="Start" onclick="checkRadio();"/>
+    </div>
+
+    <div id="resultField" style="text-align: center;">
+    </div>
+
+</center>
+        
+<center><font size="2"> Custom Character Sorter. Click the character you like best, and at the end you'll get a list of your favorites in order!
+    <br>Original code was created by Bathkame (Their site isn't up anymore).</font></center>
+ 
+
+
+</body>
+</html>
